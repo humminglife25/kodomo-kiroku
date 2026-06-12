@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>こどもの作品きろく帳</title>
+<style>
+body{font-family:sans-serif;max-width:430px;margin:0 auto;padding:20px;background:#f7f9ff;}
+h1{color:#4a6cf7;}
+.card{background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:20px;}
+input, textarea{width:100%;padding:10px;margin:5px 0 15px;box-sizing:border-box;}
+button{background:#4a6cf7;color:white;border:none;padding:12px;border-radius:8px;width:100%;cursor:pointer;}
+.work{border-top:1px solid #ccc;padding-top:15px;margin-top:15px;}
+.delete{background:#ff6b6b;margin-top:8px;}
+</style>
+</head>
+<body>
+
+<h1>こどもの作品きろく帳</h1>
+
+<div class="card">
+<label>作品写真</label>
+
+<label>作成日</label>
+<input type="date" id="createdDate">
+<input type="file" id="photo" accept="image/*">
+<img id="preview" style="display:none; width:100%; margin-bottom:15px; border-radius:12px;">
+<label>子どもの誕生日</label>
+<input type="date" id="birthDate" value="2023-05-08">
+  <label>作品名</label>
+  <input type="text" id="title">
+
+  <label>メモ</label>
+  <textarea id="memo"></textarea>
+
+  <button onclick="saveWork()">保存</button>
+</div>
+
+<div class="card">
+  <h2>保存した作品</h2>
+  <div id="list"></div>
+</div>
+
+<script>
+let works = JSON.parse(localStorage.getItem("works")) || [];
+document.getElementById("photo").addEventListener("change", function(event){
+  const file = event.target.files[0];
+
+  if(file){
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+      const preview = document.getElementById("preview");
+      preview.src = e.target.result;
+      preview.style.display = "block";
+    };
+
+    reader.readAsDataURL(file);
+  }
+});
+
+function saveWork(){
+  const title = document.getElementById("title").value;
+  const memo = document.getElementById("memo").value;
+const createdDate = document.getElementById("createdDate").value;
+const birthDate = document.getElementById("birthDate").value;
+  const photoInput = document.getElementById("photo");
+
+  if(title === ""){
+    alert("作品名を入力してね");
+    return;
+  }
+
+const file = photoInput.files[0];
+
+if(!file){
+  alert("写真を選択してね");
+  return;
+}
+
+const reader = new FileReader();
+
+reader.onload = function(e){
+
+  const work = {
+    id: Date.now(),
+    title: title,
+    memo: memo,
+    photo: e.target.result,
+    createdDate: createdDate,
+    age: calcAge(birthDate, createdDate)
+  };
+
+  works.unshift(work);
+
+  localStorage.setItem("works", JSON.stringify(works));
+
+  document.getElementById("title").value = "";
+  document.getElementById("memo").value = "";
+
+  showWorks();
+};
+
+reader.readAsDataURL(file);
+
+  works.unshift(work);
+  localStorage.setItem("works", JSON.stringify(works));
+
+  document.getElementById("title").value = "";
+  document.getElementById("memo").value = "";
+
+function calcAge(birthDate, createdDate){
+
+    const birth = new Date(birthDate);
+    const created = new Date(createdDate);
+
+    let years = created.getFullYear() - birth.getFullYear();
+    let months = created.getMonth() - birth.getMonth();
+
+    if(months < 0){
+        years--;
+        months += 12;
+    }
+
+    return `${years}歳${months}ヶ月`;
+}
+  showWorks();
+}
+
+function showWorks(){
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  works.forEach(function(work){
+    list.innerHTML += `
+      <div class="work">
+<img src="${work.photo}" style="width:100%;border-radius:10px;margin-bottom:10px;">
+        <h3>${work.title}</h3>
+<p>作成日：${work.createdDate}</p>
+<p>年齢：${work.age}</p>
+        <p>${work.memo}</p>
+        <button class="delete" onclick="deleteWork(${work.id})">削除</button>
+      </div>
+    `;
+  });
+}
+
+function deleteWork(id){
+  works = works.filter(function(work){
+    return work.id !== id;
+  });
+
+  localStorage.setItem("works", JSON.stringify(works));
+  showWorks();
+}
+
+showWorks();
+</script>
+
+</body>
+</html>
