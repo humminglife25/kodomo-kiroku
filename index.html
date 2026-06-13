@@ -19,14 +19,25 @@ button{background:#4a6cf7;color:white;border:none;padding:12px;border-radius:8px
 <h1>こどもの作品きろく帳</h1>
 
 <div class="card">
-<label>作品写真</label>
+  <h2>設定</h2>
 
-<label>作成日</label>
-<input type="date" id="createdDate">
-<input type="file" id="photo" accept="image/*">
-<img id="preview" style="display:none; width:100%; margin-bottom:15px; border-radius:12px;">
-<label>子どもの誕生日</label>
-<input type="date" id="birthDate" value="2023-05-08">
+  <label>子どもの名前</label>
+  <input type="text" id="childName">
+
+  <label>子どもの誕生日</label>
+  <input type="date" id="birthDate" value="2023-05-08">
+
+  <button type="button" onclick="saveSettings()">設定を保存</button>
+</div>
+
+<div class="card">
+  <label>作品写真</label>
+  <input type="file" id="photo" accept="image/*">
+  <img id="preview" style="display:none; width:100%; margin-bottom:15px; border-radius:12px;">
+
+  <label>作成日</label>
+  <input type="date" id="createdDate">
+
   <label>作品名</label>
   <input type="text" id="title">
 
@@ -43,6 +54,8 @@ button{background:#4a6cf7;color:white;border:none;padding:12px;border-radius:8px
 
 <script>
 let works = JSON.parse(localStorage.getItem("works")) || [];
+
+// 写真プレビュー
 document.getElementById("photo").addEventListener("change", function(event){
   const file = event.target.files[0];
 
@@ -59,11 +72,23 @@ document.getElementById("photo").addEventListener("change", function(event){
   }
 });
 
+// 設定保存
+function saveSettings(){
+  const childName = document.getElementById("childName").value;
+  const birthDate = document.getElementById("birthDate").value;
+
+  localStorage.setItem("childName", childName);
+  localStorage.setItem("birthDate", birthDate);
+
+  alert("設定を保存しました！");
+}
+
+// 作品保存
 function saveWork(){
   const title = document.getElementById("title").value;
   const memo = document.getElementById("memo").value;
-const createdDate = document.getElementById("createdDate").value;
-const birthDate = document.getElementById("birthDate").value;
+  const createdDate = document.getElementById("createdDate").value;
+  const birthDate = localStorage.getItem("birthDate") || document.getElementById("birthDate").value;
   const photoInput = document.getElementById("photo");
 
   if(title === ""){
@@ -71,62 +96,61 @@ const birthDate = document.getElementById("birthDate").value;
     return;
   }
 
-const file = photoInput.files[0];
+  if(createdDate === ""){
+    alert("作成日を入力してね");
+    return;
+  }
 
-if(!file){
-  alert("写真を選択してね");
-  return;
-}
+  const file = photoInput.files[0];
 
-const reader = new FileReader();
+  if(!file){
+    alert("写真を選択してね");
+    return;
+  }
 
-reader.onload = function(e){
+  const reader = new FileReader();
 
-  const work = {
-    id: Date.now(),
-    title: title,
-    memo: memo,
-    photo: e.target.result,
-    createdDate: createdDate,
-    age: calcAge(birthDate, createdDate)
+  reader.onload = function(e){
+    const work = {
+      id: Date.now(),
+      title: title,
+      memo: memo,
+      photo: e.target.result,
+      createdDate: createdDate,
+      age: calcAge(birthDate, createdDate)
+    };
+
+    works.unshift(work);
+    localStorage.setItem("works", JSON.stringify(works));
+
+    document.getElementById("title").value = "";
+    document.getElementById("memo").value = "";
+    document.getElementById("photo").value = "";
+    document.getElementById("preview").style.display = "none";
+
+    showWorks();
   };
 
-  works.unshift(work);
+  reader.readAsDataURL(file);
+}
 
-  localStorage.setItem("works", JSON.stringify(works));
-
-  document.getElementById("title").value = "";
-  document.getElementById("memo").value = "";
-
-  showWorks();
-};
-
-reader.readAsDataURL(file);
-
-  works.unshift(work);
-  localStorage.setItem("works", JSON.stringify(works));
-
-  document.getElementById("title").value = "";
-  document.getElementById("memo").value = "";
-
+// 年齢計算
 function calcAge(birthDate, createdDate){
+  const birth = new Date(birthDate);
+  const created = new Date(createdDate);
 
-    const birth = new Date(birthDate);
-    const created = new Date(createdDate);
+  let years = created.getFullYear() - birth.getFullYear();
+  let months = created.getMonth() - birth.getMonth();
 
-    let years = created.getFullYear() - birth.getFullYear();
-    let months = created.getMonth() - birth.getMonth();
+  if(months < 0){
+    years--;
+    months += 12;
+  }
 
-    if(months < 0){
-        years--;
-        months += 12;
-    }
-
-    return `${years}歳${months}ヶ月`;
-}
-  showWorks();
+  return `${years}歳${months}ヶ月`;
 }
 
+// 一覧表示
 function showWorks(){
   const list = document.getElementById("list");
   list.innerHTML = "";
@@ -134,10 +158,10 @@ function showWorks(){
   works.forEach(function(work){
     list.innerHTML += `
       <div class="work">
-<img src="${work.photo}" style="width:100%;border-radius:10px;margin-bottom:10px;">
+        <img src="${work.photo}" style="width:100%;border-radius:10px;margin-bottom:10px;">
         <h3>${work.title}</h3>
-<p>作成日：${work.createdDate}</p>
-<p>年齢：${work.age}</p>
+        <p>作成日：${work.createdDate}</p>
+        <p>年齢：${work.age}</p>
         <p>${work.memo}</p>
         <button class="delete" onclick="deleteWork(${work.id})">削除</button>
       </div>
@@ -145,6 +169,7 @@ function showWorks(){
   });
 }
 
+// 削除
 function deleteWork(id){
   works = works.filter(function(work){
     return work.id !== id;
@@ -153,6 +178,13 @@ function deleteWork(id){
   localStorage.setItem("works", JSON.stringify(works));
   showWorks();
 }
+
+// 初期表示
+document.getElementById("childName").value =
+  localStorage.getItem("childName") || "";
+
+document.getElementById("birthDate").value =
+  localStorage.getItem("birthDate") || "2023-05-08";
 
 showWorks();
 </script>
