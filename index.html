@@ -5,118 +5,115 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>こどもの作品きろく帳</title>
 <style>
-body{font-family:sans-serif;max-width:430px;margin:0 auto;padding:20px;background:#f7f9ff;}
-h1{color:#4a6cf7;}
-.card{background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:20px;}
-input, textarea{width:100%;padding:10px;margin:5px 0 15px;box-sizing:border-box;}
+body{font-family:sans-serif;max-width:430px;margin:0 auto;padding:20px 20px 80px;background:#f7f9ff;}
+h1{color:#4a6cf7;text-align:center;}
+.card{background:white;padding:20px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin-bottom:20px;}
+input,textarea{width:100%;padding:10px;margin:5px 0 15px;box-sizing:border-box;}
 button{background:#4a6cf7;color:white;border:none;padding:12px;border-radius:8px;width:100%;cursor:pointer;}
-.work{border-top:1px solid #ccc;padding-top:15px;margin-top:15px;}
 .delete{background:#ff6b6b;margin-top:8px;}
+.work{border-top:1px solid #ddd;padding-top:15px;margin-top:15px;}
+.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);max-width:430px;width:100%;display:flex;background:white;box-shadow:0 -2px 8px rgba(0,0,0,.1);}
+.tabs button{flex:1;background:white;color:#4a6cf7;border-radius:0;font-size:13px;padding:12px 4px;}
 </style>
 </head>
 <body>
 
 <h1>こどもの作品きろく帳</h1>
 
-<div class="card">
-  <h2>設定</h2>
-
-  <label>子どもの名前</label>
-  <input type="text" id="childName">
-
-  <label>子どもの誕生日</label>
-  <input type="date" id="birthDate" value="2023-05-08">
-
-  <button type="button" onclick="saveSettings()">設定を保存</button>
+<div id="listPage" class="page">
+  <div class="card">
+    <h2>保存した作品</h2>
+    <div id="list"></div>
+  </div>
 </div>
 
-<div class="card">
-  <label>作品写真</label>
-  <input type="file" id="photo" accept="image/*">
-  <img id="preview" style="display:none; width:100%; margin-bottom:15px; border-radius:12px;">
+<div id="addPage" class="page">
+  <div class="card">
+    <h2>作品を登録</h2>
 
-  <label>作成日</label>
-  <input type="date" id="createdDate">
+    <label>作品写真</label>
+    <input type="file" id="photo" accept="image/*">
+    <img id="preview" style="display:none;width:100%;border-radius:12px;margin-bottom:15px;">
 
-  <label>作品名</label>
-  <input type="text" id="title">
+    <label>作成日</label>
+    <input type="date" id="createdDate">
 
-  <label>メモ</label>
-  <textarea id="memo"></textarea>
+    <label>作品名</label>
+    <input type="text" id="title">
 
-  <button onclick="saveWork()">保存</button>
+    <label>メモ</label>
+    <textarea id="memo"></textarea>
+
+    <button onclick="saveWork()">保存</button>
+  </div>
 </div>
 
-<div class="card">
-  <h2>保存した作品</h2>
-  <div id="list"></div>
+<div id="myPage" class="page">
+  <div class="card">
+    <h2>マイページ</h2>
+
+    <label>子どもの名前</label>
+    <input type="text" id="childName">
+
+    <label>子どもの誕生日</label>
+    <input type="date" id="birthDate" value="2023-05-08">
+
+    <button type="button" onclick="saveSettings()">設定を保存</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button onclick="showPage('listPage')">📚 一覧</button>
+  <button onclick="showPage('addPage')">➕ 登録</button>
+  <button onclick="showPage('myPage')">👤 マイページ</button>
 </div>
 
 <script>
 let works = JSON.parse(localStorage.getItem("works")) || [];
 
-// 写真プレビュー
+function showPage(pageId){
+  document.querySelectorAll(".page").forEach(page => page.style.display = "none");
+  document.getElementById(pageId).style.display = "block";
+}
+
 document.getElementById("photo").addEventListener("change", function(event){
   const file = event.target.files[0];
-
   if(file){
     const reader = new FileReader();
-
     reader.onload = function(e){
       const preview = document.getElementById("preview");
       preview.src = e.target.result;
       preview.style.display = "block";
     };
-
     reader.readAsDataURL(file);
   }
 });
 
-// 設定保存
 function saveSettings(){
-  const childName = document.getElementById("childName").value;
-  const birthDate = document.getElementById("birthDate").value;
-
-  localStorage.setItem("childName", childName);
-  localStorage.setItem("birthDate", birthDate);
-
+  localStorage.setItem("childName", document.getElementById("childName").value);
+  localStorage.setItem("birthDate", document.getElementById("birthDate").value);
   alert("設定を保存しました！");
 }
 
-// 作品保存
 function saveWork(){
   const title = document.getElementById("title").value;
   const memo = document.getElementById("memo").value;
   const createdDate = document.getElementById("createdDate").value;
-  const birthDate = localStorage.getItem("birthDate") || document.getElementById("birthDate").value;
-  const photoInput = document.getElementById("photo");
+  const birthDate = localStorage.getItem("birthDate") || "2023-05-08";
+  const file = document.getElementById("photo").files[0];
 
-  if(title === ""){
-    alert("作品名を入力してね");
-    return;
-  }
-
-  if(createdDate === ""){
-    alert("作成日を入力してね");
-    return;
-  }
-
-  const file = photoInput.files[0];
-
-  if(!file){
-    alert("写真を選択してね");
-    return;
-  }
+  if(title === ""){ alert("作品名を入力してね"); return; }
+  if(createdDate === ""){ alert("作成日を入力してね"); return; }
+  if(!file){ alert("写真を選択してね"); return; }
 
   const reader = new FileReader();
-
   reader.onload = function(e){
     const work = {
       id: Date.now(),
-      title: title,
-      memo: memo,
+      title,
+      memo,
+      createdDate,
       photo: e.target.result,
-      createdDate: createdDate,
       age: calcAge(birthDate, createdDate)
     };
 
@@ -125,20 +122,19 @@ function saveWork(){
 
     document.getElementById("title").value = "";
     document.getElementById("memo").value = "";
+    document.getElementById("createdDate").value = "";
     document.getElementById("photo").value = "";
     document.getElementById("preview").style.display = "none";
 
     showWorks();
+    showPage("listPage");
   };
-
   reader.readAsDataURL(file);
 }
 
-// 年齢計算
 function calcAge(birthDate, createdDate){
   const birth = new Date(birthDate);
   const created = new Date(createdDate);
-
   let years = created.getFullYear() - birth.getFullYear();
   let months = created.getMonth() - birth.getMonth();
 
@@ -150,10 +146,14 @@ function calcAge(birthDate, createdDate){
   return `${years}歳${months}ヶ月`;
 }
 
-// 一覧表示
 function showWorks(){
   const list = document.getElementById("list");
   list.innerHTML = "";
+
+  if(works.length === 0){
+    list.innerHTML = "<p>まだ作品がありません</p>";
+    return;
+  }
 
   works.forEach(function(work){
     list.innerHTML += `
@@ -169,24 +169,17 @@ function showWorks(){
   });
 }
 
-// 削除
 function deleteWork(id){
-  works = works.filter(function(work){
-    return work.id !== id;
-  });
-
+  works = works.filter(work => work.id !== id);
   localStorage.setItem("works", JSON.stringify(works));
   showWorks();
 }
 
-// 初期表示
-document.getElementById("childName").value =
-  localStorage.getItem("childName") || "";
-
-document.getElementById("birthDate").value =
-  localStorage.getItem("birthDate") || "2023-05-08";
+document.getElementById("childName").value = localStorage.getItem("childName") || "";
+document.getElementById("birthDate").value = localStorage.getItem("birthDate") || "2023-05-08";
 
 showWorks();
+showPage("listPage");
 </script>
 
 </body>
